@@ -1,18 +1,13 @@
 package org.baibei;
 
-import org.baibei.scrypt.interpreter.ScriptEngine;
-import org.baibei.scrypt.interpreter.ScriptException;
+import org.baibei.script.interpreter.ScriptEngine;
+import org.baibei.script.interpreter.ScriptException;
+
+import java.io.IOException;
 
 public class Main {
-    public static void main(String[] args) throws ScriptException {
+    public static void main(String[] args) throws ScriptException, IOException {
         ScriptEngine engine = new ScriptEngine();
-        String script = """
-                println("Starting for");
-                for (var i = 0; i < 3; i = i + 1;) {
-                    println(i);
-                }
-                println("Ending for");
-                """;
-        engine.execute(script);
+        engine.executeFile("scripts\\main.bbs");
     }
 }

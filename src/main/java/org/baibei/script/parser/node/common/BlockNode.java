@@ -18,15 +18,10 @@ public class BlockNode extends ASTNode {
 
     @Override
     public Object execute(Context context) {
-        context.enterScope();
-        try {
-            Object result = null;
-            for (ASTNode stmt : statements) {
-                result = stmt.execute(context);
-            }
-            return result;
-        } finally {
-            context.exitScope();
+        Object result = null;
+        for (ASTNode stmt : statements) {
+            result = stmt.execute(context);
         }
+        return result;
     }
 }

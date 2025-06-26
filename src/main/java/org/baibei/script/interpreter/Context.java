@@ -4,12 +4,7 @@ import org.baibei.script.commands.Command;
 import org.baibei.script.commands.Function;
 
 import java.nio.file.Path;
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 public class Context {
     // Стек для управления областями видимости
@@ -63,9 +58,19 @@ public class Context {
 
     // === Работа с переменными ===
     public void setVariable(String name, Object value) {
+        for (Iterator<Map<String, Object>> it = scopeStack.descendingIterator(); it.hasNext();) {
+            Map<String, Object> scope = it.next();
+            if (scope.containsKey(name)) {
+                scope.put(name, value);
+                return;
+            }
+        }
+
         if (scopeStack.isEmpty()) {
             initializeDefaultScope();
         }
+
+        assert scopeStack.peek() != null;
         scopeStack.peek().put(name, value);
     }
 

@@ -28,6 +28,7 @@ public class ImportNode extends ASTNode {
             Path candidate = Paths.get(p);
             if (!candidate.isAbsolute()) {
                 candidate = context.getCurrentDir().resolve(p);
+                System.out.println("Absolute path: " + candidate);
             }
 
             if (!Files.exists(candidate)) {

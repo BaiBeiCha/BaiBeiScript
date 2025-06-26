@@ -31,7 +31,7 @@ public class Parser {
         return program;
     }
 
-    private ASTNode declaration() throws ParserException {
+    private ASTNode declaration() {
         try {
             if (match(TokenType.IMPORT)) {
                 return importStatement();
@@ -45,12 +45,7 @@ public class Parser {
             return statement();
         } catch (ParserException e) {
             synchronize();
-            return new ASTNode() {
-                @Override
-                public Object execute(Context context) {
-                    return null;
-                }
-            };
+            return new EmptyNode();
         }
     }
 
@@ -72,23 +67,25 @@ public class Parser {
 
     private ASTNode variableDeclaration() throws ParserException {
         Token name = consume(TokenType.IDENTIFIER, "Expect variable name.");
-
         ExpressionNode initializer = null;
+
         if (match(TokenType.ASSIGN)) {
             initializer = expression();
         }
+        consume(TokenType.SEMICOLON, "Expect ';' after variable.");
 
-        consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
-
-        return new AssignmentNode(name.getLexeme(),
-                initializer != null ? initializer : new MathExpressionNode("null"));
+        return new AssignmentNode(
+                name.getLexeme(),
+                initializer != null ? initializer : new MathExpressionNode("null")
+        );
     }
 
     private ASTNode statement() throws ParserException {
+        if (match(TokenType.SEMICOLON)) return new EmptyNode();
         if (match(TokenType.IF)) return ifStatement();
         if (match(TokenType.WHILE)) return whileStatement();
         if (match(TokenType.FOR)) return forStatement();
-        if (match(TokenType.LBRACE)) return block();
+        if (check(TokenType.LBRACE)) return block();
         if (match(TokenType.RETURN)) return returnStatement();
         if (match(TokenType.BREAK)) return new BreakNode();
         if (match(TokenType.CONTINUE)) return new ContinueNode();
@@ -133,18 +130,22 @@ public class Parser {
 
         ASTNode init;
         if (match(TokenType.VAR)) {
-            init = variableDeclaration();
-        } else if (match(TokenType.SEMICOLON)) {
-            init = null;
+            Token name = consume(TokenType.IDENTIFIER, "Expect variable name.");
+            ExpressionNode initializer = null;
+            if (match(TokenType.ASSIGN)) {
+                initializer = expression();
+            }
+            init = new AssignmentNode(name.getLexeme(), initializer);
         } else {
             init = expressionStatement();
         }
+        consume(TokenType.SEMICOLON, "Expect ';' after initializer.");
 
         ExpressionNode condition = null;
         if (!check(TokenType.SEMICOLON)) {
             condition = expression();
         }
-        consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+        consume(TokenType.SEMICOLON, "Expect ';' after condition.");
 
         ExpressionNode increment = null;
         if (!check(TokenType.RPAREN)) {
@@ -152,20 +153,21 @@ public class Parser {
         }
         consume(TokenType.RPAREN, "Expect ')' after for clauses.");
 
-        ASTNode body = block();
-
+        ASTNode body = statement();
         return new ForNode(init, condition, increment, body);
     }
 
     private BlockNode block() throws ParserException {
+        consume(TokenType.LBRACE, "Expect '{' before block.");
         BlockNode block = new BlockNode();
 
-        consume(TokenType.LBRACE, "Expect '{' before block.");
         while (!check(TokenType.RBRACE) && !isAtEnd()) {
-            block.addStatement(declaration());
+            ASTNode stmt = declaration();
+            if (stmt == null) continue;
+            block.addStatement(stmt);
         }
-        consume(TokenType.RBRACE, "Expect '}' after block.");
 
+        consume(TokenType.RBRACE, "Expect '}' after block.");
         return block;
     }
 
@@ -200,7 +202,7 @@ public class Parser {
     private ExpressionNode assignment() throws ParserException {
         ExpressionNode expr = logicalOr();
 
-        if (match(TokenType.EQ)) {
+        if (match(TokenType.ASSIGN)) {
             Token equals = previous();
             ExpressionNode value = assignment();
 
@@ -288,23 +290,38 @@ public class Parser {
     }
 
     private ExpressionNode unary() throws ParserException {
-        if (match(TokenType.NOT, TokenType.SUB)) {
-            Token operator = previous();
-            ExpressionNode right = unary();
-            return new UnaryOpNode(operator.getType(), right);
+        if (match(TokenType.INCREMENT, TokenType.DECREMENT)) {
+            TokenType op = previous().getType();
+            ExpressionNode operand = unary();
+            if (!(operand instanceof VariableNode)) {
+                throw new ParserException(peek(), "Increment/decrement must apply to a variable.");
+            }
+            return new PrefixOpNode(op, (VariableNode) operand);
         }
+
+        if (match(TokenType.NOT, TokenType.SUB)) {
+            TokenType op = previous().getType();
+            ExpressionNode right = unary();
+            return new UnaryOpNode(op, right);
+        }
+
         return call();
     }
 
     private ExpressionNode call() throws ParserException {
         ExpressionNode expr = primary();
 
-        while (true) {
-            if (match(TokenType.LPAREN)) {
-                expr = finishCall(expr);
-            } else {
-                break;
+        while (match(TokenType.LPAREN)) {
+            expr = finishCall(expr);
+        }
+
+        if (match(TokenType.INCREMENT, TokenType.DECREMENT)) {
+            TokenType op = previous().getType();
+            if (!(expr instanceof VariableNode)) {
+                throw new ParserException(peek(),
+                        "Increment/decrement must apply to a variable.");
             }
+            expr = new PostfixOpNode(op, (VariableNode) expr);
         }
 
         return expr;
@@ -320,14 +337,12 @@ public class Parser {
                 arguments.add(expression());
             } while (match(TokenType.COMMA));
         }
-
         Token paren = consume(TokenType.RPAREN, "Expect ')' after arguments.");
 
         if (callee instanceof VariableNode) {
             String name = ((VariableNode) callee).getName();
             return new FunctionCallNode(name, arguments);
         }
-
         throw new ParserException(paren, "Can only call functions.");
     }
 
@@ -337,7 +352,7 @@ public class Parser {
         }
         if (match(TokenType.STRING)) {
             String raw = previous().getLexeme();
-            String value = raw.startsWith("\"") && raw.endsWith("\"")
+            String value = (raw.startsWith("\"") && raw.endsWith("\""))
                     ? raw.substring(1, raw.length() - 1)
                     : raw;
             return new StringNode(value);
@@ -352,7 +367,6 @@ public class Parser {
         }
         throw new ParserException(peek(), "Expect expression.");
     }
-
 
     private boolean match(TokenType... types) {
         for (TokenType type : types) {

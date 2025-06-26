@@ -17,6 +17,12 @@ public class BinaryOpNode extends ExpressionNode {
 
     @Override
     public Object execute(Context context) {
+        if (operator == TokenType.ASSIGN && left instanceof VariableNode) {
+            Object val = right.execute(context);
+            context.setVariable(((VariableNode) left).getName(), val);
+            return val;
+        }
+
         Object l = left != null ? left.execute(context) : null;
         Object r = right.execute(context);
 

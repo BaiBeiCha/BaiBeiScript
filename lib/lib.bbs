@@ -1,3 +1,14 @@
 func hello() {
     println("Hello world!");
 }
+
+func f1(n1) {
+    func f2(n2) {
+        return n1 * n2;
+    }
+    return f2(2);
+}
+
+function concat(s1, s2) {
+    return s1 + s2;
+}

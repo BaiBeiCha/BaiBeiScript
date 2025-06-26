@@ -19,9 +19,7 @@ public class ReturnNode extends ASTNode {
     }
 
     public static class ReturnException extends RuntimeException {
-
         public final Object value;
-
         public ReturnException(Object value) {
             this.value = value;
         }

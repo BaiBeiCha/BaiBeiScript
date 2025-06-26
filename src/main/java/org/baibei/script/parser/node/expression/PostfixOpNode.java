@@ -16,10 +16,23 @@ public class PostfixOpNode extends ExpressionNode {
     @Override
     public Object execute(Context ctx) {
         String name = operand.getName();
-        Number value = (Number) ctx.getVariable(name);
-        int v = value.intValue();
-        int newVal = (operator == TokenType.INCREMENT) ? v + 1 : v - 1;
-        ctx.setVariable(name, newVal);
-        return v;
+        Object value = ctx.getVariable(name);
+        Object newValue;
+
+        if (value instanceof Integer) {
+            int val = (Integer) value;
+            newValue = (operator == TokenType.INCREMENT) ? val + 1 : val - 1;
+        } else if (value instanceof Long) {
+            long val = (Long) value;
+            newValue = (operator == TokenType.INCREMENT) ? val + 1 : val - 1;
+        } else if (value instanceof Double) {
+            double val = (Double) value;
+            newValue = (operator == TokenType.INCREMENT) ? val + 1 : val - 1;
+        } else {
+            throw new RuntimeException("Increment/decrement requires a number");
+        }
+
+        ctx.setVariable(name, newValue);
+        return value;
     }
 }

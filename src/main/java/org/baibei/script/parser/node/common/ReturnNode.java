@@ -1,6 +1,7 @@
 package org.baibei.script.parser.node.common;
 
 import org.baibei.script.interpreter.Context;
+import org.baibei.script.interpreter.ScriptException;
 import org.baibei.script.parser.node.ASTNode;
 import org.baibei.script.parser.node.expression.ExpressionNode;
 
@@ -13,7 +14,7 @@ public class ReturnNode extends ASTNode {
     }
 
     @Override
-    public Object execute(Context context) {
+    public Object execute(Context context) throws ScriptException {
         Object result = value != null ? value.execute(context) : null;
         throw new ReturnException(result);
     }

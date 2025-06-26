@@ -1,5 +1,6 @@
 package org.baibei.script.parser.node.expression;
 
+import org.baibei.script.interpreter.ScriptException;
 import org.baibei.script.lexer.TokenType;
 import org.baibei.script.interpreter.Context;
 
@@ -16,7 +17,7 @@ public class BinaryOpNode extends ExpressionNode {
     }
 
     @Override
-    public Object execute(Context context) {
+    public Object execute(Context context) throws ScriptException {
         if (operator == TokenType.ASSIGN && left instanceof VariableNode) {
             Object val = right.execute(context);
             context.setVariable(((VariableNode) left).getName(), val);

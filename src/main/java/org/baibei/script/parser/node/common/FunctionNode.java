@@ -1,6 +1,7 @@
 package org.baibei.script.parser.node.common;
 
 import org.baibei.script.interpreter.Context;
+import org.baibei.script.interpreter.ScriptException;
 import org.baibei.script.parser.node.ASTNode;
 
 import java.util.List;
@@ -29,6 +30,8 @@ public class FunctionNode extends ASTNode {
                 result = body.execute(context);
             } catch (ReturnNode.ReturnException ret) {
                 result = ret.value;
+            } catch (ScriptException e) {
+                throw new RuntimeException(e);
             }
             context.exitScope();
             return result;

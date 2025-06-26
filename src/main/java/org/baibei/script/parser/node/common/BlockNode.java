@@ -1,6 +1,7 @@
 package org.baibei.script.parser.node.common;
 
 import org.baibei.script.interpreter.Context;
+import org.baibei.script.interpreter.ScriptException;
 import org.baibei.script.parser.node.ASTNode;
 
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ public class BlockNode extends ASTNode {
     }
 
     @Override
-    public Object execute(Context context) {
+    public Object execute(Context context) throws ScriptException {
         Object result = null;
         for (ASTNode stmt : statements) {
             result = stmt.execute(context);

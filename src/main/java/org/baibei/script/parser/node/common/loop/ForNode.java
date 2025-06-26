@@ -1,6 +1,7 @@
 package org.baibei.script.parser.node.common.loop;
 
 import org.baibei.script.interpreter.Context;
+import org.baibei.script.interpreter.ScriptException;
 import org.baibei.script.parser.node.ASTNode;
 import org.baibei.script.parser.node.expression.ExpressionNode;
 
@@ -45,6 +46,8 @@ public class ForNode extends ASTNode {
                 }
             }
             return null;
+        } catch (ScriptException e) {
+            throw new RuntimeException(e);
         } finally {
             context.exitScope();
         }

@@ -32,6 +32,14 @@ public class Lexer {
         keywords.put("then", TokenType.THEN);
         keywords.put("import", TokenType.IMPORT);
         keywords.put("var", TokenType.VAR);
+        keywords.put("int", TokenType.INT);
+        keywords.put("long", TokenType.LONG);
+        keywords.put("double", TokenType.DOUBLE);
+        keywords.put("string", TokenType.STRING);
+        keywords.put("static", TokenType.STATIC);
+        keywords.put("final", TokenType.FINAL);
+        keywords.put("const", TokenType.CONST);
+        keywords.put("new", TokenType.NEW);
     }
 
     public Lexer(String source) {
@@ -68,6 +76,8 @@ public class Lexer {
             case '.': addToken(TokenType.DOT); break;
             case '?': addToken(TokenType.QUESTION); break;
             case ':': addToken(TokenType.COLON); break;
+            case '[': addToken(TokenType.LBRACKET); break;
+            case ']': addToken(TokenType.RBRACKET); break;
 
             // Операторы
             case '+':

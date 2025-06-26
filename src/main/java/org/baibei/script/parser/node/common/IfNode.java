@@ -1,6 +1,7 @@
 package org.baibei.script.parser.node.common;
 
 import org.baibei.script.interpreter.Context;
+import org.baibei.script.interpreter.ScriptException;
 import org.baibei.script.parser.node.ASTNode;
 import org.baibei.script.parser.node.expression.ExpressionNode;
 
@@ -17,7 +18,7 @@ public class IfNode extends ASTNode {
     }
 
     @Override
-    public Object execute(Context context) {
+    public Object execute(Context context) throws ScriptException {
         Object condResult = condition.execute(context);
         if (condResult instanceof Boolean && (Boolean) condResult) {
             return ifBlock.execute(context);

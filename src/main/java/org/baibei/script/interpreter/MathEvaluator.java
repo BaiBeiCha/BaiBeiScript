@@ -33,6 +33,12 @@ public class MathEvaluator {
             throw new IllegalArgumentException(
                     "Unexpected character at position " + pos + ": '" + expr.charAt(pos) + "'");
         }
+
+        if (result == (int) result) {
+            return (int) result;
+        } else if (result == (long) result) {
+            return (long) result;
+        }
         return result;
     }
 

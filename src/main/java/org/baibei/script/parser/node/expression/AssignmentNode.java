@@ -1,6 +1,7 @@
 package org.baibei.script.parser.node.expression;
 
 import org.baibei.script.interpreter.Context;
+import org.baibei.script.interpreter.ScriptException;
 
 public class AssignmentNode extends ExpressionNode {
 
@@ -13,7 +14,7 @@ public class AssignmentNode extends ExpressionNode {
     }
 
     @Override
-    public Object execute(Context context) {
+    public Object execute(Context context) throws ScriptException {
         Object val = value != null ? value.execute(context) : null;
         context.setVariable(name, val);
         return val;

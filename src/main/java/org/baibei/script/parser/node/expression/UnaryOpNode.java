@@ -1,6 +1,7 @@
 package org.baibei.script.parser.node.expression;
 
 import org.baibei.script.interpreter.Context;
+import org.baibei.script.interpreter.ScriptException;
 import org.baibei.script.lexer.TokenType;
 
 public class UnaryOpNode extends ExpressionNode {
@@ -14,7 +15,7 @@ public class UnaryOpNode extends ExpressionNode {
     }
 
     @Override
-    public Object execute(Context context) {
+    public Object execute(Context context) throws ScriptException {
         Object rightVal = right.execute(context);
         return switch (operator) {
             case SUB -> -(double) rightVal;

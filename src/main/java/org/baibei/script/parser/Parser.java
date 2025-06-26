@@ -39,7 +39,9 @@ public class Parser {
             if (match(TokenType.FUNCTION)) {
                 return functionDeclaration();
             }
-            if (match(TokenType.VAR)) {
+            if (check(TokenType.STATIC) || check(TokenType.FINAL) || check(TokenType.CONST) ||
+                    check(TokenType.VAR) || check(TokenType.INT) || check(TokenType.LONG) ||
+                    check(TokenType.DOUBLE) || check(TokenType.STRING)) {
                 return variableDeclaration();
             }
             return statement();
@@ -66,18 +68,43 @@ public class Parser {
     }
 
     private ASTNode variableDeclaration() throws ParserException {
-        Token name = consume(TokenType.IDENTIFIER, "Expect variable name.");
-        ExpressionNode initializer = null;
+        boolean isStatic = match(TokenType.STATIC);
+        boolean isFinal = match(TokenType.FINAL) || match(TokenType.CONST);
 
+        String type = "object";
+        int dimensions = 0;
+
+        if (match(TokenType.INT, TokenType.LONG, TokenType.DOUBLE, TokenType.STRING)) {
+            type = previous().getType().name().toLowerCase();
+
+            while (match(TokenType.LBRACKET)) {
+                dimensions++;
+                consume(TokenType.RBRACKET, "Expect ']' after array dimension");
+            }
+        } else if (match(TokenType.VAR)) {
+            type = "var";
+        }
+
+        Token name = consume(TokenType.IDENTIFIER, "Expect variable name");
+
+        ExpressionNode initializer = null;
         if (match(TokenType.ASSIGN)) {
             initializer = expression();
         }
-        consume(TokenType.SEMICOLON, "Expect ';' after variable.");
 
-        return new AssignmentNode(
-                name.getLexeme(),
-                initializer != null ? initializer : new MathExpressionNode("null")
+        consume(TokenType.SEMICOLON, "Expect ';' after variable declaration");
+
+        return new VariableDeclarationNode(
+                type, name.getLexeme(), initializer, isFinal, isStatic, dimensions
         );
+    }
+
+    private String parseType() throws ParserException {
+        if (match(TokenType.INT)) return "int";
+        if (match(TokenType.LONG)) return "long";
+        if (match(TokenType.DOUBLE)) return "double";
+        if (match(TokenType.STRING)) return "string";
+        throw new ParserException(peek(), "Incorrect type of variable");
     }
 
     private ASTNode statement() throws ParserException {
@@ -311,17 +338,23 @@ public class Parser {
     private ExpressionNode call() throws ParserException {
         ExpressionNode expr = primary();
 
-        while (match(TokenType.LPAREN)) {
-            expr = finishCall(expr);
-        }
-
-        if (match(TokenType.INCREMENT, TokenType.DECREMENT)) {
-            TokenType op = previous().getType();
-            if (!(expr instanceof VariableNode)) {
-                throw new ParserException(peek(),
-                        "Increment/decrement must apply to a variable.");
+        while (true) {
+            if (match(TokenType.LPAREN)) {
+                expr = finishCall(expr);
+            } else if (match(TokenType.LBRACKET)) {
+                ExpressionNode index = expression();
+                consume(TokenType.RBRACKET, "Expect ']' after index.");
+                expr = new ArrayAccessNode(expr, index);
+            } else if (match(TokenType.INCREMENT, TokenType.DECREMENT)) {
+                TokenType op = previous().getType();
+                if (!(expr instanceof VariableNode)) {
+                    throw new ParserException(peek(),
+                            "Increment/decrement must apply to a variable.");
+                }
+                expr = new PostfixOpNode(op, (VariableNode) expr);
+            } else {
+                break;
             }
-            expr = new PostfixOpNode(op, (VariableNode) expr);
         }
 
         return expr;
@@ -348,7 +381,16 @@ public class Parser {
 
     private ExpressionNode primary() throws ParserException {
         if (match(TokenType.NUMBER)) {
-            return new MathExpressionNode(previous().getLexeme());
+            String number = previous().getLexeme();
+            if (number.contains(".") || number.contains("e") || number.contains("E")) {
+                return new DoubleNode(Double.parseDouble(number));
+            } else {
+                try {
+                    return new IntegerNode(Integer.parseInt(number));
+                } catch (NumberFormatException e) {
+                    return new LongNode(Long.parseLong(number));
+                }
+            }
         }
         if (match(TokenType.STRING)) {
             String raw = previous().getLexeme();
@@ -360,12 +402,31 @@ public class Parser {
         if (match(TokenType.IDENTIFIER)) {
             return new VariableNode(previous().getLexeme());
         }
+        if (match(TokenType.LBRACE)) {
+            return arrayLiteral();
+        }
         if (match(TokenType.LPAREN)) {
             ExpressionNode expr = expression();
             consume(TokenType.RPAREN, "Expect ')' after expression.");
             return expr;
         }
         throw new ParserException(peek(), "Expect expression.");
+    }
+
+    private ExpressionNode arrayLiteral() throws ParserException {
+        List<ExpressionNode> elements = new ArrayList<>();
+
+        if (!check(TokenType.RBRACE)) {
+            do {
+                if (match(TokenType.LBRACE)) {
+                    elements.add(arrayLiteral());
+                } else {
+                    elements.add(expression());
+                }
+            } while (match(TokenType.COMMA));
+        }
+        consume(TokenType.RBRACE, "Expect '}' after array elements.");
+        return new ArrayLiteralNode(elements);
     }
 
     private boolean match(TokenType... types) {

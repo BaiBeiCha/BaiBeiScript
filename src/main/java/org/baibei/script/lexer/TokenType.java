@@ -8,8 +8,11 @@ public enum TokenType {
     // Литералы
     IDENTIFIER,
     NUMBER,
-    STRING,
     VAR,
+    // TokenType.java
+    INT, LONG, DOUBLE, STRING,
+    STATIC, FINAL, CONST,
+    NEW, LBRACKET, RBRACKET,
 
     // Ключевые слова
     IF, ELSE, WHILE, FOR, FUNCTION, RETURN,

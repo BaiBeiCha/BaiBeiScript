@@ -28,13 +28,11 @@ public class ScriptEngine {
 
     // Инициализация встроенных команд и функций
     private void initializeBuiltins() {
-        // Регистрация встроенной команды print
         context.registerCommand("print", args -> {
             System.out.println(String.join(" ", args));
             return null;
         });
 
-        // Регистрация встроенной функции assert
         context.addFunction("assert", (args) -> {
             if (args.length == 0) {
                 throw new RuntimeException("Assert requires at least one argument");
@@ -46,6 +44,51 @@ public class ScriptEngine {
                 throw new RuntimeException(message);
             }
             return null;
+        });
+
+        context.addFunction("printArray", args -> {
+            if (args.length == 0) {
+                throw new RuntimeException("printArray requires an array");
+            }
+            Object array = args[0];
+            if (!array.getClass().isArray()) {
+                throw new RuntimeException("Argument must be an array");
+            }
+
+            int length = java.lang.reflect.Array.getLength(array);
+            for (int i = 0; i < length; i++) {
+                Object element = java.lang.reflect.Array.get(array, i);
+                System.out.print(element + " ");
+            }
+            System.out.println();
+            return null;
+        });
+
+        context.addFunction("len", args -> {
+            if (args.length != 1) {
+                throw new RuntimeException("len() requires exactly one argument");
+            }
+            Object obj = args[0];
+
+            if (obj == null) return 0;
+
+            if (obj.getClass().isArray()) {
+                return java.lang.reflect.Array.getLength(obj);
+            }
+
+            if (obj instanceof List) {
+                return ((List<?>) obj).size();
+            }
+
+            if (obj instanceof String) {
+                return ((String) obj).length();
+            }
+
+            if (obj instanceof Object[]) {
+                return ((Object[]) obj).length;
+            }
+
+            throw new RuntimeException("len() not supported for type: " + obj.getClass());
         });
     }
 
